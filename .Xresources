@@ -1,0 +1,14 @@
+#ifdef COLOR
+*customization: -color
+#endif
+
+emacs*Background: DarkSlateGray
+emacs*Foreground: Wheat
+emacs*pointerColor: Orchid
+emacs*cursorColor: Orchid
+emacs*bitmapIcon: on
+emacs*font: fixed
+# emacs.geometry: 80x50
+emacs*toolBar: 0
+
+xterm.geometry: 80x50
