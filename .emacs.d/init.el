@@ -34,6 +34,19 @@
 ;	     :init
 ;	     (elpy-enable))
 (elpy-enable)
+; (remove-hook 'flymake-diagnostic-functions 'flymake-proc-legacy-flymake)
+
+; (add-to-list 'process-coding-system-alist '("python" . (utf-8 . utf-8)))
+(setq elpy-rpc-python-command "python3")
+
+(require 'flycheck-pyflakes)
+(add-hook 'python-mode-hook 'flycheck-mode)
+
+;(add-to-list 'process-coding-system-alist '("python" . (utf-8 . utf-8)))
+;(setenv "PYTHONIOENCODING" "utf-8")
+;(add-to-list 'process-coding-system-alist '("python" . (utf-8 . utf-8)))
+;(add-to-list 'process-coding-system-alist '("elpy" . (utf-8 . utf-8)))
+;(add-to-list 'process-coding-system-alist '("flake8" . (utf-8 . utf-8)))
 
 ;; latex-math-preview
 
@@ -44,3 +57,8 @@
 ; (define-key (kbd "j") 'latex-math-preview-insert-symbol)
 ; (define-key (kbd "\C-j") 'latex-math-preview-last-symbol-again)
 ; (define-key (kbd "\C-b") 'latex-math-preview-beamer-frame)
+
+(add-hook 'org-mode-hook 'org-fragtog-mode)
+
+(require 'org)
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 1.50))
