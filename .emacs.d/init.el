@@ -11,7 +11,7 @@
 (add-to-list 'package-archives
              '("melpa" . "https://melpa.org/packages/") t)
 
-(server-start)
+; (server-start)
 
 ;; set up ido mode
 (require `ido)
@@ -28,25 +28,87 @@
 (setq org-startup-folded "showall")
 (setq org-directory "~/org")
 
-;; elpy
+
+;; elpy - python integration
 ;(use-package elpy
 ;	     :ensure t
 ;	     :init
 ;	     (elpy-enable))
-(elpy-enable)
-; (remove-hook 'flymake-diagnostic-functions 'flymake-proc-legacy-flymake)
+; (elpy-enable)
 
-; (add-to-list 'process-coding-system-alist '("python" . (utf-8 . utf-8)))
-(setq elpy-rpc-python-command "python3")
+;; Copied from https://gist.github.com/TauPan/17305751a883005872dc
+;; replace nose -> pytest
+(use-package elpy
+  :config
+  (progn (elpy-enable)
+         (defun elpy-pytest-test-spec (module test)
+           (cond (test
+		  (let ((test-list (split-string test "\\.")))
+		    (mapconcat #'identity
+			       (cons (format "%s.py" module) test-list)
+			       "::")
+		    )
+		  )
+                 (module module)
+                 (t "")))
+         (defun elpy-test-nose-pdb-runner (top file module test)
+           "Test the project using the nose test runner with the --pdb arg.
+This requires the nose package to be installed."
+           (interactive (elpy-test-at-point))
+           (let (
+		 (default-directory top)
+		 (test-list (split-string test "\\."))
+		 )
+             (pdb (format "pytest --pdb %s"
+                          (elpy-pytest-test-spec module test)))))
+         (put 'elpy-test-nose-pdb-runner 'elpy-test-runner-p t)
+         (defvar elpy-test-pdb-runner
+           #'elpy-test-nose-pdb-runner
+           "Test runner to run with pdb")
+         (defun elpy-test-django-nose-pdb-runner (top file module test)
+           "Test the project using the django-nose test runner with the --pdb arg.
+This requires the django-nose package to be installed and
+properly configured for the django project."
+           (interactive (elpy-test-at-point))
+           (let ((default-directory top))
+             (pdb (format "django-admin.py test --noinput %s --pdb"
+                          (elpy-nose-test-spec module test)))))
+         (defun elpy-test-pdb (&optional test-whole-project)
+           "Run test the current project with the elpy-test-pdb-runner
+            prefix args have the same semantics as for `elpy-test'"
+           (interactive "P")
+           (let ((elpy-test-runner elpy-test-pdb-runner))
+             (elpy-test test-whole-project)))
+         (eval-after-load 'elpy
+           '(progn
+              (define-key elpy-mode-map
+                (kbd "C-c t") 'elpy-test-pdb)))))
 
-(require 'flycheck-pyflakes)
-(add-hook 'python-mode-hook 'flycheck-mode)
+;(setq elpy-test-pytest-runner-command '("py.test" "--pdb" "--capture=no"))
+;(setq elpy-test-pytest-runner-command '("py.test" "--pdb" "--disable-warnings"))
+;(setq elpy-test-compilation-function 'pdb)
 
-;(add-to-list 'process-coding-system-alist '("python" . (utf-8 . utf-8)))
-;(setenv "PYTHONIOENCODING" "utf-8")
-;(add-to-list 'process-coding-system-alist '("python" . (utf-8 . utf-8)))
-;(add-to-list 'process-coding-system-alist '("elpy" . (utf-8 . utf-8)))
-;(add-to-list 'process-coding-system-alist '("flake8" . (utf-8 . utf-8)))
+
+
+
+;; Use IPython for REPL
+;(setq python-shell-interpreter "jupyter"
+;      python-shell-interpreter-args "console --simple-prompt"
+;      python-shell-prompt-detect-failure-warning nil)
+;(add-to-list 'python-shell-completion-native-disabled-interpreters
+;             "jupyter")
+
+;; Enable Flycheck
+(when (require 'flycheck nil t)
+  (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
+  (add-hook 'elpy-mode-hook 'flycheck-mode))
+
+(projectile-mode +1)
+;; Recommended keymap prefix on macOS
+(define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+;; Recommended keymap prefix on Windows/Linux
+(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+
 
 ;; latex-math-preview
 
@@ -61,4 +123,10 @@
 (add-hook 'org-mode-hook 'org-fragtog-mode)
 
 (require 'org)
-(setq org-format-latex-options (plist-put org-format-latex-options :scale 1.50))
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 2.00))
+
+
+(defun my-flymd-browser-function (url)
+  (let ((browse-url-browser-function 'browse-url-firefox))
+    (browse-url url)))
+(setq flymd-browser-open-function 'my-flymd-browser-function)
