@@ -11,7 +11,7 @@
 (add-to-list 'package-archives
              '("melpa" . "https://melpa.org/packages/") t)
 
-; (server-start)
+(server-start)
 
 ;; set up ido mode
 (require `ido)
@@ -41,12 +41,16 @@
 (use-package elpy
   :config
   (progn (elpy-enable)
-         (defun elpy-pytest-test-spec (module test)
+	 (defun elpy-pytest-test-spec (module test)
            (cond (test
-		  (let ((test-list (split-string test "\\.")))
-		    (mapconcat #'identity
-			       (cons (format "%s.py" module) test-list)
-			       "::")
+		  (let ((test-list (split-string test "\\."))
+			(module-list (split-string module "\\."))
+			)
+		    (let ((mod (mapconcat #'identity module-list "/")))
+		      (mapconcat #'identity
+				 (cons (format "%s.py" mod) test-list)
+				 "::")
+		      )
 		    )
 		  )
                  (module module)
@@ -55,12 +59,9 @@
            "Test the project using the nose test runner with the --pdb arg.
 This requires the nose package to be installed."
            (interactive (elpy-test-at-point))
-           (let (
-		 (default-directory top)
-		 (test-list (split-string test "\\."))
-		 )
-             (pdb (format "pytest --pdb %s"
-                          (elpy-pytest-test-spec module test)))))
+           (let ((default-directory top))
+             (pdb (format "pytest --rootdir %s -vv --pdb %s"
+                          top (elpy-pytest-test-spec module test)))))
          (put 'elpy-test-nose-pdb-runner 'elpy-test-runner-p t)
          (defvar elpy-test-pdb-runner
            #'elpy-test-nose-pdb-runner
@@ -102,12 +103,6 @@ properly configured for the django project."
 (when (require 'flycheck nil t)
   (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
   (add-hook 'elpy-mode-hook 'flycheck-mode))
-
-(projectile-mode +1)
-;; Recommended keymap prefix on macOS
-(define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
-;; Recommended keymap prefix on Windows/Linux
-(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 
 
 ;; latex-math-preview
